@@ -30,6 +30,64 @@ import {
   Eye,
 } from 'lucide-react';
 
+// Sayısal giriş bileşeni - Yazarken state güncellemelerinin araya girmesini engeller
+function NumberInput({
+  value,
+  onChange,
+  className,
+  ...props
+}: {
+  value: number;
+  onChange: (val: number) => void;
+  className?: string;
+  step?: string;
+  placeholder?: string;
+}) {
+  const [localValue, setLocalValue] = React.useState(value.toString());
+
+  // Dışarıdan gelen değer değişirse local state'i güncelle (farklıysa)
+  React.useEffect(() => {
+    if (parseFloat(localValue) !== value) {
+      setLocalValue(value.toString());
+    }
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVal = e.target.value;
+    setLocalValue(newVal);
+
+    // Sadece geçerli bir sayı ise ve sonu nokta ile bitmiyorsa güncellemeyi gönder
+    if (newVal === '' || newVal === '-') return;
+
+    const num = parseFloat(newVal);
+    if (!isNaN(num) && !newVal.endsWith('.')) {
+      onChange(num);
+    }
+  };
+
+  const handleBlur = () => {
+    if (localValue === '' || localValue === '-' || isNaN(parseFloat(localValue))) {
+      onChange(0);
+      setLocalValue('0');
+    } else {
+      const parsed = parseFloat(localValue);
+      onChange(parsed);
+      setLocalValue(parsed.toString());
+    }
+  };
+
+  return (
+    <Input
+      type="text"
+      value={localValue}
+      onChange={handleChange}
+      onBlur={handleBlur}
+      className={className}
+      {...props}
+    />
+  );
+}
+
 export function FilterPanel() {
   const { selectedLayer, updateLayerFilters, updateLayer } = useProject();
 
@@ -169,7 +227,7 @@ export function FilterPanel() {
               <Move className="w-4 h-4 text-primary" />
               <span>Konum</span>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">X Offset</Label>
@@ -303,13 +361,53 @@ export function FilterPanel() {
             </div>
 
             <FilterSlider
-              icon={CircleDot}           label="Bulanıklık"
+              icon={CircleDot} label="Bulanıklık"
               value={filters.blur}
               min={0}
               max={20}
               unit="px"
               filterKey="blur"
             />
+          </div>
+
+          <Separator className="bg-primary/20" />
+
+          {/* UV Scroll */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Move className="w-4 h-4 text-primary" />
+              <span>UV Kaydırma (Hız)</span>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 flex-1">
+                  <Move className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm">X Hızı</span>
+                </div>
+                <NumberInput
+                  value={filters.uvScrollX}
+                  onChange={(val) => handleFilterChange('uvScrollX', val)}
+                  className="w-24 h-8 text-right"
+                  step="0.1"
+                  placeholder="0"
+                />
+              </div>
+
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 flex-1">
+                  <Move className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm">Y Hızı</span>
+                </div>
+                <NumberInput
+                  value={filters.uvScrollY}
+                  onChange={(val) => handleFilterChange('uvScrollY', val)}
+                  className="w-24 h-8 text-right"
+                  step="0.1"
+                  placeholder="0"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </ScrollArea>

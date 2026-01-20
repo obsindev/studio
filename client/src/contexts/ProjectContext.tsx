@@ -62,7 +62,18 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         if (response.ok) {
           const serverConfig = await response.json();
           if (serverConfig) {
-            setConfig(serverConfig);
+            // Ensure all layers have complete filter properties
+            const configWithDefaults = {
+              ...serverConfig,
+              layers: serverConfig.layers.map((layer: Layer) => ({
+                ...layer,
+                filters: {
+                  ...DEFAULT_FILTERS,
+                  ...layer.filters,
+                },
+              })),
+            };
+            setConfig(configWithDefaults);
           }
         }
       } catch (error) {

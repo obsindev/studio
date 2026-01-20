@@ -34,6 +34,10 @@ export interface LayerFilters {
   flipX: boolean;
   /** Dikey çevirme */
   flipY: boolean;
+  /** UV Kaydırma X Hızı */
+  uvScrollX: number;
+  /** UV Kaydırma Y Hızı */
+  uvScrollY: number;
   /** Görünürlük */
   visible: boolean;
 }
@@ -104,6 +108,8 @@ export const DEFAULT_FILTERS: LayerFilters = {
   blur: 0,
   flipX: false,
   flipY: false,
+  uvScrollX: 0,
+  uvScrollY: 0,
   visible: true,
 };
 

@@ -6,11 +6,55 @@
  * Tuval dışındaki alan tile edilerek gösterilir
  */
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Link } from 'wouter';
 import { ProjectConfig, DEFAULT_PROJECT_CONFIG, Layer } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Settings, Layers, RefreshCw } from 'lucide-react';
+
+// UV Scroll Component - requestAnimationFrame ile sürekli animasyon
+function UVScrollLayer({ layer }: { layer: Layer }) {
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const animationRef = useRef<number>();
+  const lastTimeRef = useRef<number>(0);
+
+  useEffect(() => {
+    const animate = (time: number) => {
+      if (!lastTimeRef.current) lastTimeRef.current = time;
+      const delta = (time - lastTimeRef.current) / 1000; // saniye cinsinden
+      lastTimeRef.current = time;
+
+      setOffset(prev => ({
+        x: (prev.x + layer.filters.uvScrollX * delta * 100) % 1000,
+        y: (prev.y + layer.filters.uvScrollY * delta * 100) % 1000,
+      }));
+
+      animationRef.current = requestAnimationFrame(animate);
+    };
+
+    if (layer.filters.uvScrollX !== 0 || layer.filters.uvScrollY !== 0) {
+      animationRef.current = requestAnimationFrame(animate);
+    }
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [layer.filters.uvScrollX, layer.filters.uvScrollY]);
+
+  return (
+    <div
+      className="w-full h-full"
+      style={{
+        backgroundImage: `url("${layer.source}")`,
+        backgroundRepeat: 'repeat',
+        backgroundSize: '100% 100%',
+        backgroundPosition: `${offset.x}px ${offset.y}px`,
+      }}
+    />
+  );
+}
 
 export default function Home() {
   const [config, setConfig] = useState<ProjectConfig>(DEFAULT_PROJECT_CONFIG);
@@ -167,12 +211,16 @@ export default function Home() {
               className="max-w-full max-h-full object-contain"
             />
           ) : (
-            <img
-              src={layer.source}
-              alt={layer.name}
-              className="max-w-full max-h-full object-contain"
-              draggable={false}
-            />
+            layer.filters.uvScrollX !== 0 || layer.filters.uvScrollY !== 0 ? (
+              <UVScrollLayer layer={layer} />
+            ) : (
+              <img
+                src={layer.source}
+                alt={layer.name}
+                className="max-w-full max-h-full object-contain"
+                draggable={false}
+              />
+            )
           )}
         </div>
       ))}

@@ -5,9 +5,53 @@
  * Config sayfasında kullanılır - sadece tuval alanı gösterilir (tile yok)
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useRef, useState } from 'react';
 import { useProject } from '@/contexts/ProjectContext';
 import { Layer } from '@/types';
+
+// UV Scroll Component - requestAnimationFrame ile sürekli animasyon
+function UVScrollLayer({ layer }: { layer: Layer }) {
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const animationRef = useRef<number>();
+  const lastTimeRef = useRef<number>(0);
+
+  useEffect(() => {
+    const animate = (time: number) => {
+      if (!lastTimeRef.current) lastTimeRef.current = time;
+      const delta = (time - lastTimeRef.current) / 1000; // saniye cinsinden
+      lastTimeRef.current = time;
+
+      setOffset(prev => ({
+        x: (prev.x + layer.filters.uvScrollX * delta * 100) % 1000,
+        y: (prev.y + layer.filters.uvScrollY * delta * 100) % 1000,
+      }));
+
+      animationRef.current = requestAnimationFrame(animate);
+    };
+
+    if (layer.filters.uvScrollX !== 0 || layer.filters.uvScrollY !== 0) {
+      animationRef.current = requestAnimationFrame(animate);
+    }
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [layer.filters.uvScrollX, layer.filters.uvScrollY]);
+
+  return (
+    <div
+      className="w-full h-full"
+      style={{
+        backgroundImage: `url("${layer.source}")`,
+        backgroundRepeat: 'repeat',
+        backgroundSize: '100% 100%',
+        backgroundPosition: `${offset.x}px ${offset.y}px`,
+      }}
+    />
+  );
+}
 
 interface CanvasPreviewProps {
   /** Önizleme ölçeği (0-1 arası) */
@@ -18,16 +62,16 @@ interface CanvasPreviewProps {
   showGrid?: boolean;
 }
 
-export function CanvasPreview({ 
-  scale = 0.5, 
+export function CanvasPreview({
+  scale = 0.5,
   showBorder = true,
-  showGrid = false 
+  showGrid = false
 }: CanvasPreviewProps) {
   const { config, selectedLayerId } = useProject();
   const { canvasSize, backgroundColor, layers } = config;
 
   // Katmanları zIndex'e göre sırala
-  const sortedLayers = useMemo(() => 
+  const sortedLayers = useMemo(() =>
     [...layers].sort((a, b) => a.zIndex - b.zIndex),
     [layers]
   );
@@ -35,7 +79,7 @@ export function CanvasPreview({
   // CSS filter string oluştur
   const getFilterStyle = (layer: Layer): React.CSSProperties => {
     const { filters } = layer;
-    
+
     if (!filters.visible) {
       return { display: 'none' };
     }
@@ -76,14 +120,14 @@ export function CanvasPreview({
           width: scaledWidth,
           height: scaledHeight,
           backgroundColor,
-          boxShadow: showBorder 
-            ? '0 0 0 2px rgba(0, 240, 255, 0.5), 0 0 30px rgba(0, 240, 255, 0.2)' 
+          boxShadow: showBorder
+            ? '0 0 0 2px rgba(0, 240, 255, 0.5), 0 0 30px rgba(0, 240, 255, 0.2)'
             : 'none',
         }}
       >
         {/* Grid Overlay */}
         {showGrid && (
-          <div 
+          <div
             className="absolute inset-0 pointer-events-none cyber-grid"
             style={{ opacity: 0.3 }}
           />
@@ -101,7 +145,7 @@ export function CanvasPreview({
           >
             {/* Seçili Katman Göstergesi */}
             {selectedLayerId === layer.id && layer.filters.visible && (
-              <div 
+              <div
                 className="absolute inset-0 pointer-events-none"
                 style={{
                   border: '2px dashed rgba(0, 240, 255, 0.8)',
@@ -121,12 +165,16 @@ export function CanvasPreview({
                 className="max-w-full max-h-full object-contain"
               />
             ) : (
-              <img
-                src={layer.source}
-                alt={layer.name}
-                className="max-w-full max-h-full object-contain"
-                draggable={false}
-              />
+              layer.filters.uvScrollX !== 0 || layer.filters.uvScrollY !== 0 ? (
+                <UVScrollLayer layer={layer} />
+              ) : (
+                <img
+                  src={layer.source}
+                  alt={layer.name}
+                  className="max-w-full max-h-full object-contain"
+                  draggable={false}
+                />
+              )
             )}
           </div>
         ))}
