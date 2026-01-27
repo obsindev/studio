@@ -30,7 +30,7 @@ import { Download, Upload, RotateCcw, MoreVertical, Save, FileJson } from 'lucid
 import { toast } from 'sonner';
 
 export function ConfigActions() {
-  const { config, exportConfig, importConfig, resetConfig, saveConfig } = useProject();
+  const { config, exportConfig, importConfig, resetConfig, saveConfig, shareProject } = useProject();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleExport = () => {
@@ -89,8 +89,8 @@ export function ConfigActions() {
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="sm"
             className="border-primary/30 hover:border-primary hover:bg-primary/10"
           >
@@ -98,41 +98,57 @@ export function ConfigActions() {
             İşlemler
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent 
-          align="end" 
+        <DropdownMenuContent
+          align="end"
           className="bg-card border-primary/30 w-48"
         >
-          <DropdownMenuItem 
+          <DropdownMenuItem
+            onClick={async () => {
+              const link = await shareProject();
+              if (link) {
+                navigator.clipboard.writeText(link);
+                toast.success('Paylaşım linki kopyalandı!');
+              }
+            }}
+            className="focus:bg-primary/20 cursor-pointer text-primary"
+          >
+            <Download className="w-4 h-4 mr-2 rotate-180" />
+            Linki Paylaş
+          </DropdownMenuItem>
+
+          <DropdownMenuSeparator className="bg-primary/20" />
+
+          <DropdownMenuItem
             onClick={handleSave}
             className="focus:bg-primary/20 cursor-pointer"
           >
             <Save className="w-4 h-4 mr-2" />
             Kaydet
           </DropdownMenuItem>
-          
+
           <DropdownMenuSeparator className="bg-primary/20" />
-          
-          <DropdownMenuItem 
+
+          <DropdownMenuItem
             onClick={handleExport}
             className="focus:bg-primary/20 cursor-pointer"
           >
             <Download className="w-4 h-4 mr-2" />
             JSON Dışa Aktar
           </DropdownMenuItem>
-          
-          <DropdownMenuItem 
+
+          <DropdownMenuItem
             onClick={() => fileInputRef.current?.click()}
             className="focus:bg-primary/20 cursor-pointer"
           >
             <Upload className="w-4 h-4 mr-2" />
             JSON İçe Aktar
           </DropdownMenuItem>
-          
+
           <DropdownMenuSeparator className="bg-primary/20" />
-          
+
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onSelect={(e) => e.preventDefault()}
                 className="focus:bg-destructive/20 text-destructive cursor-pointer"
               >
@@ -153,7 +169,7 @@ export function ConfigActions() {
                 <AlertDialogCancel className="border-primary/30 hover:border-primary hover:bg-primary/10">
                   İptal
                 </AlertDialogCancel>
-                <AlertDialogAction 
+                <AlertDialogAction
                   onClick={resetConfig}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >

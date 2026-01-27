@@ -9,16 +9,16 @@ import {
   createNewLayer,
   MediaType,
 } from '@/types';
-
-// Local Storage Key
-const STORAGE_KEY = 'obs-web-studio-config';
+import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 interface ProjectContextType {
   // Proje durumu
   config: ProjectConfig;
+  isLoading: boolean;
 
   // Katman işlemleri
-  addLayer: (name: string, type: MediaType, source: string) => void;
+  addLayer: (name: string, type: MediaType, source: string) => Promise<void>;
   removeLayer: (layerId: string) => void;
   updateLayer: (layerId: string, updates: Partial<Layer>) => void;
   updateLayerFilters: (layerId: string, filters: Partial<LayerFilters>) => void;
@@ -36,11 +36,12 @@ interface ProjectContextType {
 
   // Proje işlemleri
   setProjectName: (name: string) => void;
-  saveConfig: () => void;
-  loadConfig: () => void;
-  resetConfig: () => void;
+  saveConfig: () => Promise<void>;
+  loadConfig: () => Promise<void>;
+  resetConfig: () => Promise<void>;
   exportConfig: () => string;
   importConfig: (jsonString: string) => boolean;
+  shareProject: () => Promise<string | null>;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
@@ -48,29 +49,50 @@ const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 export function ProjectProvider({ children }: { children: ReactNode }) {
   const [config, setConfig] = useState<ProjectConfig>(DEFAULT_PROJECT_CONFIG);
   const [isLoading, setIsLoading] = useState(true);
-
+  const [projectId, setProjectId] = useState<string | null>(null);
   const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
 
-  // Seçili katmanı hesapla
   const selectedLayer = config.layers.find(l => l.id === selectedLayerId) || null;
 
-  // İlk yüklemede sunucudan config'i çek
+  // URL'den proje ID'sini kontrol et
   useEffect(() => {
-    const loadFromServer = async () => {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+    if (id) {
+      setProjectId(id);
+    }
+  }, []);
+
+  // İlk yüklemede buluttan veya yerel sunucudan config'i çek
+  useEffect(() => {
+    const loadInitialConfig = async () => {
+      setIsLoading(true);
       try {
+        // Eğer URL'de bir ID varsa önce buluttan çek
+        if (projectId) {
+          const { data, error } = await supabase
+            .from('scenes')
+            .select('config')
+            .eq('id', projectId)
+            .single();
+
+          if (data && !error) {
+            setConfig(data.config);
+            setIsLoading(false);
+            return;
+          }
+        }
+
+        // Bulutta yoksa veya ID yoksa yerel API'yi dene (Fallback)
         const response = await fetch('/api/config');
         if (response.ok) {
           const serverConfig = await response.json();
           if (serverConfig) {
-            // Ensure all layers have complete filter properties
             const configWithDefaults = {
               ...serverConfig,
               layers: serverConfig.layers.map((layer: Layer) => ({
                 ...layer,
-                filters: {
-                  ...DEFAULT_FILTERS,
-                  ...layer.filters,
-                },
+                filters: { ...DEFAULT_FILTERS, ...layer.filters },
               })),
             };
             setConfig(configWithDefaults);
@@ -83,37 +105,74 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    loadFromServer();
-  }, []);
+    loadInitialConfig();
+  }, [projectId]);
 
-  // Config değiştiğinde otomatik olarak sunucuya kaydet (debounced)
+  // Otomatik kaydetme (Debounced)
   useEffect(() => {
-    if (isLoading) return; // İlk yüklemede kaydetme
+    if (isLoading) return;
 
     const timeoutId = setTimeout(async () => {
+      // Yerel API'ye kaydet (Hala varsa)
       try {
-        await fetch('/api/config', {
+        fetch('/api/config', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(config),
         });
-      } catch (error) {
-        console.error('Config kaydedilemedi:', error);
+      } catch (e) { }
+
+      // Eğer bir bulut projesi içindeysek buluta da otomatik kaydet
+      if (projectId) {
+        await supabase
+          .from('scenes')
+          .update({ config, updated_at: new Date().toISOString() })
+          .eq('id', projectId);
       }
-    }, 500); // 500ms debounce
+    }, 1000);
 
     return () => clearTimeout(timeoutId);
-  }, [config, isLoading]);
+  }, [config, isLoading, projectId]);
 
-  // Katman ekleme
-  const addLayer = useCallback((name: string, type: MediaType, source: string) => {
+  // Resim yükleme ve Cloud Storage entegrasyonu
+  const uploadToStorage = async (file: File): Promise<string | null> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+    const filePath = `layers/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('assets')
+      .upload(filePath, file);
+
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      return null;
+    }
+
+    const { data } = supabase.storage.from('assets').getPublicUrl(filePath);
+    return data.publicUrl;
+  };
+
+  const addLayer = useCallback(async (name: string, type: MediaType, source: string) => {
+    let finalSource = source;
+
+    // Eğer source bir dataURL (Base64) ise ve dosya seçilmişse buluta yükle
+    if (source.startsWith('data:')) {
+      const response = await fetch(source);
+      const blob = await response.blob();
+      const file = new File([blob], name, { type: blob.type });
+
+      const cloudUrl = await uploadToStorage(file);
+      if (cloudUrl) {
+        finalSource = cloudUrl;
+      }
+    }
+
     const maxZIndex = config.layers.length > 0
       ? Math.max(...config.layers.map(l => l.zIndex))
       : 0;
 
-    const newLayer = createNewLayer(name, type, source, maxZIndex + 1);
+    const newLayer = createNewLayer(name, type, finalSource, maxZIndex + 1);
 
     setConfig(prev => ({
       ...prev,
@@ -124,7 +183,6 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     setSelectedLayerId(newLayer.id);
   }, [config.layers]);
 
-  // Katman silme
   const removeLayer = useCallback((layerId: string) => {
     setConfig(prev => ({
       ...prev,
@@ -137,7 +195,6 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     }
   }, [selectedLayerId]);
 
-  // Katman güncelleme
   const updateLayer = useCallback((layerId: string, updates: Partial<Layer>) => {
     setConfig(prev => ({
       ...prev,
@@ -150,7 +207,6 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  // Katman filtrelerini güncelleme
   const updateLayerFilters = useCallback((layerId: string, filters: Partial<LayerFilters>) => {
     setConfig(prev => ({
       ...prev,
@@ -167,14 +223,12 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  // Katman sıralama
   const reorderLayers = useCallback((fromIndex: number, toIndex: number) => {
     setConfig(prev => {
       const newLayers = [...prev.layers];
       const [removed] = newLayers.splice(fromIndex, 1);
       newLayers.splice(toIndex, 0, removed);
 
-      // zIndex'leri yeniden ata
       const reindexed = newLayers.map((layer, index) => ({
         ...layer,
         zIndex: index + 1,
@@ -188,7 +242,6 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  // Katman kopyalama
   const duplicateLayer = useCallback((layerId: string) => {
     const layer = config.layers.find(l => l.id === layerId);
     if (!layer) return;
@@ -211,7 +264,6 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     setSelectedLayerId(newLayer.id);
   }, [config.layers]);
 
-  // Tuval boyutu ayarlama
   const setCanvasSize = useCallback((size: CanvasSize) => {
     setConfig(prev => ({
       ...prev,
@@ -220,7 +272,6 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  // Arka plan rengi ayarlama
   const setBackgroundColor = useCallback((color: string) => {
     setConfig(prev => ({
       ...prev,
@@ -229,7 +280,6 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  // Proje adı ayarlama
   const setProjectName = useCallback((name: string) => {
     setConfig(prev => ({
       ...prev,
@@ -238,65 +288,42 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  // Yapılandırmayı kaydet
   const saveConfig = useCallback(async () => {
-    try {
-      await fetch('/api/config', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(config),
-      });
-    } catch (error) {
-      console.error('Config kaydedilemedi:', error);
-    }
-  }, [config]);
+    if (projectId) {
+      const { error } = await supabase
+        .from('scenes')
+        .update({ config, updated_at: new Date().toISOString() })
+        .eq('id', projectId);
 
-  // Yapılandırmayı yükle
+      if (error) toast.error('Bulut kaydı başarısız oldu');
+    }
+  }, [config, projectId]);
+
   const loadConfig = useCallback(async () => {
-    try {
-      const response = await fetch('/api/config');
-      if (response.ok) {
-        const serverConfig = await response.json();
-        if (serverConfig) {
-          setConfig(serverConfig);
-        }
-      }
-    } catch (error) {
-      console.error('Config yüklenemedi:', error);
-    }
-  }, []);
+    if (projectId) {
+      const { data, error } = await supabase
+        .from('scenes')
+        .select('config')
+        .eq('id', projectId)
+        .single();
 
-  // Yapılandırmayı sıfırla
+      if (data && !error) setConfig(data.config);
+    }
+  }, [projectId]);
+
   const resetConfig = useCallback(async () => {
     setConfig(DEFAULT_PROJECT_CONFIG);
     setSelectedLayerId(null);
-
-    // Sunucudaki config'i de sıfırla
-    try {
-      await fetch('/api/config', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(DEFAULT_PROJECT_CONFIG),
-      });
-    } catch (error) {
-      console.error('Config sıfırlanamadı:', error);
-    }
+    setProjectId(null);
   }, []);
 
-  // JSON olarak dışa aktar
   const exportConfig = useCallback(() => {
     return JSON.stringify(config, null, 2);
   }, [config]);
 
-  // JSON'dan içe aktar
   const importConfig = useCallback((jsonString: string): boolean => {
     try {
       const parsed = JSON.parse(jsonString);
-      // Temel doğrulama
       if (parsed.canvasSize && parsed.layers && Array.isArray(parsed.layers)) {
         setConfig({
           ...DEFAULT_PROJECT_CONFIG,
@@ -311,8 +338,36 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const shareProject = async (): Promise<string | null> => {
+    try {
+      // Mevcut ID varsa güncelle, yoksa yeni oluştur
+      if (projectId) {
+        await saveConfig();
+        return `${window.location.origin}${window.location.pathname}?id=${projectId}`;
+      } else {
+        const newId = Math.random().toString(36).substring(2, 10);
+        const { error } = await supabase
+          .from('scenes')
+          .insert([{ id: newId, config, created_at: new Date().toISOString() }]);
+
+        if (error) {
+          console.error('Share error:', error);
+          toast.error('Paylaşım linki oluşturulamadı');
+          return null;
+        }
+
+        setProjectId(newId);
+        window.history.pushState({}, '', `?id=${newId}`);
+        return `${window.location.origin}${window.location.pathname}?id=${newId}`;
+      }
+    } catch (e) {
+      return null;
+    }
+  };
+
   const value: ProjectContextType = {
     config,
+    isLoading,
     addLayer,
     removeLayer,
     updateLayer,
@@ -330,6 +385,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     resetConfig,
     exportConfig,
     importConfig,
+    shareProject,
   };
 
   return (

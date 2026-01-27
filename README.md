@@ -37,10 +37,29 @@ Cyberpunk Control Room temasıyla tasarlanmış, modern ve modüler bir yapıya 
 - Ana sayfada **tile rendering** (tuval dışı alan tekrarlanır)
 
 ### Veri Yönetimi
-- Otomatik **localStorage** kayıt
+- Otomatik **cloud sync** (Supabase)
+- **Benzersiz link** paylaşımı (Unique shareable links)
+- Otomatik **bulut depolama** (Local dosyalar otomatik Supabase Storage'a yüklenir)
 - **JSON dışa aktarma**
 - **JSON içe aktarma**
 - Yapılandırma **sıfırlama**
+
+## Bulut Kurulumu (Supabase)
+
+Bu projeyi GitHub Pages veya internet üzerinden paylaşmak için bir Supabase projesine ihtiyacınız vardır:
+
+1. [Supabase](https://supabase.com/) üzerinden ücretsiz bir proje oluşturun.
+2. **Database:** `scenes` adında bir tablo oluşturun:
+   - `id`: text (Primary Key)
+   - `config`: jsonb
+   - `created_at`: timestamptz
+   - `updated_at`: timestamptz
+3. **Storage:** `assets` adında **public** bir bucket oluşturun.
+4. **Environment:** `.env.example` dosyasını `.env` olarak kopyalayın ve Supabase bilgilerini girin:
+   ```env
+   VITE_SUPABASE_URL=https://your-project.supabase.co
+   VITE_SUPABASE_ANON_KEY=your-anon-key
+   ```
 
 ## Kurulum
 
