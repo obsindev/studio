@@ -43,18 +43,36 @@ export function LayerList({ onAddLayer }: LayerListProps) {
   // Yerel durum ile sıralamayı yöneterek 'atlamaları' ve 'uçmaları' engelle
   const [localLayers, setLocalLayers] = useState<Layer[]>([]);
 
-  // Config değiştiğinde (yeni katman eklendiğinde veya silindiğinde) yerel durumu güncelle
+  // Config değiştiğinde (yeni katman eklendiğinde, silindiğinde veya özellikleri değiştiğinde) yerel durumu güncelle
   useEffect(() => {
     const sortedGlobal = [...config.layers].sort((a, b) => b.zIndex - a.zIndex);
 
-    // Eğer katman sayısı değişmişse veya ID listesi farklıysa güncelle
+    // Katman sayısı, ID listesi veya herhangi bir katman verisi değiştiyse güncelle
     const globalIds = sortedGlobal.map(l => l.id).join(',');
     const localIds = localLayers.map(l => l.id).join(',');
 
-    if (globalIds !== localIds) {
+    // ID listesi değiştiyse veya localLayers boşsa, doğrudan güncelle
+    if (globalIds !== localIds || localLayers.length === 0) {
       setLocalLayers(sortedGlobal);
+    } else {
+      // ID listesi aynı ama katman verileri değişmiş olabilir (örn: visible)
+      // localLayers'daki sırayı koru ama verileri güncelle
+      const updatedLocalLayers = localLayers.map(localLayer => {
+        const globalLayer = sortedGlobal.find(g => g.id === localLayer.id);
+        return globalLayer || localLayer;
+      });
+
+      // Gerçekten değişiklik varsa güncelle
+      const hasChanges = updatedLocalLayers.some((layer, i) =>
+        layer !== localLayers[i] ||
+        layer.filters.visible !== localLayers[i]?.filters?.visible
+      );
+
+      if (hasChanges) {
+        setLocalLayers(updatedLocalLayers);
+      }
     }
-  }, [config.layers, localLayers]);
+  }, [config.layers]);
 
   // Katmanları zIndex'e göre ters sırala (en üstteki en üstte görünsün)
   // localLayers yoksa (ilk render) normal hesapla
