@@ -23,6 +23,7 @@ interface ProjectContextType {
   updateLayer: (layerId: string, updates: Partial<Layer>) => void;
   updateLayerFilters: (layerId: string, filters: Partial<LayerFilters>) => void;
   reorderLayers: (fromIndex: number, toIndex: number) => void;
+  setLayers: (layers: Layer[]) => void;
   duplicateLayer: (layerId: string) => void;
 
   // Seçili katman
@@ -247,6 +248,14 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const setLayers = useCallback((layers: Layer[]) => {
+    setConfig(prev => ({
+      ...prev,
+      layers,
+      lastModified: new Date().toISOString(),
+    }));
+  }, []);
+
   const duplicateLayer = useCallback((layerId: string) => {
     const layer = config.layers.find(l => l.id === layerId);
     if (!layer) return;
@@ -413,6 +422,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     updateLayer,
     updateLayerFilters,
     reorderLayers,
+    setLayers,
     duplicateLayer,
     selectedLayerId,
     setSelectedLayerId,
