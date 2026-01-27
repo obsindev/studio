@@ -9,29 +9,32 @@ import React, { useMemo, useEffect, useRef, useState } from 'react';
 import { useProject } from '@/contexts/ProjectContext';
 import { Layer } from '@/types';
 
-// UV Scroll Component - requestAnimationFrame ile sürekli animasyon
+// UV Scroll Component - Doğrudan DOM manipülasyonu ile 60fps akıcı animasyon
 function UVScrollLayer({ layer }: { layer: Layer }) {
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const posRef = useRef({ x: 0, y: 0 });
   const animationRef = useRef<number>();
   const lastTimeRef = useRef<number>(0);
 
   useEffect(() => {
     const animate = (time: number) => {
       if (!lastTimeRef.current) lastTimeRef.current = time;
-      const delta = (time - lastTimeRef.current) / 1000; // saniye cinsinden
+      const delta = (time - lastTimeRef.current) / 1000;
       lastTimeRef.current = time;
 
-      setOffset(prev => ({
-        x: (prev.x + layer.filters.uvScrollX * delta * 100) % 1000,
-        y: (prev.y + layer.filters.uvScrollY * delta * 100) % 1000,
-      }));
+      // Pozisyonu güncelle (Pixel bazlı)
+      posRef.current.x += layer.filters.uvScrollX * delta * 50; // Hassasiyet çarpanı
+      posRef.current.y += layer.filters.uvScrollY * delta * 50;
+
+      // Doğrudan DOM'a yaz (React render cycle'ı baypas et)
+      if (containerRef.current) {
+        containerRef.current.style.backgroundPosition = `${posRef.current.x}px ${posRef.current.y}px`;
+      }
 
       animationRef.current = requestAnimationFrame(animate);
     };
 
-    if (layer.filters.uvScrollX !== 0 || layer.filters.uvScrollY !== 0) {
-      animationRef.current = requestAnimationFrame(animate);
-    }
+    animationRef.current = requestAnimationFrame(animate);
 
     return () => {
       if (animationRef.current) {
@@ -42,12 +45,13 @@ function UVScrollLayer({ layer }: { layer: Layer }) {
 
   return (
     <div
+      ref={containerRef}
       className="w-full h-full"
       style={{
         backgroundImage: `url("${layer.source}")`,
         backgroundRepeat: 'repeat',
-        backgroundSize: '100% 100%',
-        backgroundPosition: `${offset.x}px ${offset.y}px`,
+        backgroundSize: 'contain', // En-boy oranını koru, esnetme yapma
+        backgroundPosition: '0px 0px',
       }}
     />
   );
