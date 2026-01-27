@@ -97,7 +97,7 @@ export function AddMediaDialog({ open, onOpenChange }: AddMediaDialogProps) {
       setMediaUrl(result);
       setPreviewUrl(result);
       setIsLoading(false);
-      
+
       // Dosya adını katman adı olarak öner
       if (!layerName) {
         setLayerName(file.name.replace(/\.[^/.]+$/, ''));
@@ -132,8 +132,8 @@ export function AddMediaDialog({ open, onOpenChange }: AddMediaDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="cyber-panel bg-card border-primary/30 max-w-lg">
-        <DialogHeader>
+      <DialogContent className="cyber-panel bg-card border-primary/30 max-w-lg max-h-[92vh] flex flex-col p-0 overflow-hidden">
+        <DialogHeader className="p-6 pb-2 shrink-0">
           <DialogTitle className="font-display text-primary flex items-center gap-2">
             <Upload className="w-5 h-5" />
             Medya Ekle
@@ -143,7 +143,7 @@ export function AddMediaDialog({ open, onOpenChange }: AddMediaDialogProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="flex-1 overflow-y-auto p-6 pt-2 space-y-6">
           {/* Katman Adı */}
           <div className="space-y-2">
             <Label className="text-xs text-muted-foreground uppercase tracking-wider">
@@ -160,14 +160,14 @@ export function AddMediaDialog({ open, onOpenChange }: AddMediaDialogProps) {
           {/* Medya Kaynağı Seçimi */}
           <Tabs defaultValue="upload" className="w-full">
             <TabsList className="w-full bg-secondary">
-              <TabsTrigger 
-                value="upload" 
+              <TabsTrigger
+                value="upload"
                 className="flex-1 data-[state=active]:bg-primary/20 data-[state=active]:text-primary"
               >
                 <Upload className="w-4 h-4 mr-2" />
                 Dosya Yükle
               </TabsTrigger>
-              <TabsTrigger 
+              <TabsTrigger
                 value="url"
                 className="flex-1 data-[state=active]:bg-primary/20 data-[state=active]:text-primary"
               >
@@ -177,8 +177,8 @@ export function AddMediaDialog({ open, onOpenChange }: AddMediaDialogProps) {
             </TabsList>
 
             <TabsContent value="upload" className="mt-4">
-              <div 
-                className="border-2 border-dashed border-primary/30 rounded-lg p-8 text-center cursor-pointer hover:border-primary/60 hover:bg-primary/5 transition-colors"
+              <div
+                className="border-2 border-dashed border-primary/30 rounded-lg p-6 md:p-8 text-center cursor-pointer hover:border-primary/60 hover:bg-primary/5 transition-colors"
                 onClick={() => fileInputRef.current?.click()}
               >
                 <input
@@ -188,7 +188,7 @@ export function AddMediaDialog({ open, onOpenChange }: AddMediaDialogProps) {
                   onChange={handleFileSelect}
                   className="hidden"
                 />
-                <Upload className="w-12 h-12 mx-auto mb-4 text-primary/50" />
+                <Upload className="w-10 h-10 md:w-12 md:h-12 mx-auto mb-4 text-primary/50" />
                 <p className="text-sm text-muted-foreground">
                   Dosya seçmek için tıklayın veya sürükleyin
                 </p>
@@ -216,15 +216,15 @@ export function AddMediaDialog({ open, onOpenChange }: AddMediaDialogProps) {
                 <Label className="text-xs text-muted-foreground uppercase tracking-wider">
                   Medya Türü
                 </Label>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   {(['image', 'gif', 'video'] as MediaType[]).map((type) => (
                     <Button
                       key={type}
                       variant={mediaType === type ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => setMediaType(type)}
-                      className={mediaType === type 
-                        ? 'bg-primary text-primary-foreground' 
+                      className={mediaType === type
+                        ? 'bg-primary text-primary-foreground'
                         : 'border-primary/30 hover:border-primary hover:bg-primary/10'
                       }
                     >
@@ -247,15 +247,15 @@ export function AddMediaDialog({ open, onOpenChange }: AddMediaDialogProps) {
                 {isLoading ? (
                   <div className="text-muted-foreground">Yükleniyor...</div>
                 ) : mediaType === 'video' ? (
-                  <video 
-                    src={previewUrl} 
-                    controls 
+                  <video
+                    src={previewUrl}
+                    controls
                     className="max-w-full max-h-full"
                   />
                 ) : (
-                  <img 
-                    src={previewUrl} 
-                    alt="Önizleme" 
+                  <img
+                    src={previewUrl}
+                    alt="Önizleme"
                     className="max-w-full max-h-full object-contain"
                     onError={() => {
                       setPreviewUrl(null);
@@ -263,7 +263,7 @@ export function AddMediaDialog({ open, onOpenChange }: AddMediaDialogProps) {
                     }}
                   />
                 )}
-                
+
                 {/* Medya Türü Etiketi */}
                 <div className="absolute top-2 right-2 bg-background/80 px-2 py-1 rounded text-xs font-tech flex items-center gap-1">
                   {getMediaIcon(mediaType)}
@@ -285,15 +285,15 @@ export function AddMediaDialog({ open, onOpenChange }: AddMediaDialogProps) {
         </div>
 
         {/* Aksiyon Butonları */}
-        <div className="flex justify-end gap-2 pt-4 border-t border-primary/20">
-          <Button 
-            variant="outline" 
+        <div className="flex justify-end gap-2 p-4 md:p-6 border-t border-primary/20 bg-background/50 shrink-0">
+          <Button
+            variant="outline"
             onClick={handleClose}
             className="border-primary/30 hover:border-primary hover:bg-primary/10"
           >
             İptal
           </Button>
-          <Button 
+          <Button
             onClick={handleAddLayer}
             disabled={!mediaUrl || isLoading}
             className="bg-primary text-primary-foreground hover:bg-primary/90"

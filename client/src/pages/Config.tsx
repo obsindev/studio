@@ -94,8 +94,8 @@ function ConfigContent() {
   return (
     <div className="min-h-screen bg-background cyber-grid flex flex-col overflow-hidden">
       {/* Header - Responsive */}
-      <header className="h-14 border-b border-primary/30 bg-card/80 backdrop-blur-sm flex items-center justify-between px-4 shrink-0 z-50">
-        <div className="flex items-center gap-3">
+      <header className="h-14 border-b border-primary/30 bg-card/80 backdrop-blur-sm flex items-center justify-between px-4 shrink-0 z-50 overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-3 shrink-0">
           <div className="flex items-center gap-2">
             <LayersIcon className="w-5 h-5 md:w-6 md:h-6 text-primary" />
             <h1 className="font-display text-sm md:text-lg tracking-wider text-primary truncate max-w-[120px] md:max-w-none">
@@ -107,7 +107,8 @@ function ConfigContent() {
           </span>
         </div>
 
-        <div className="flex items-center gap-2 md:gap-3">
+        <div className="flex items-center gap-2 md:gap-3 shrink-0">
+          {/* Desktop Controls */}
           <div className="hidden sm:flex items-center gap-2">
             <CanvasSettings />
             <ConfigActions />
@@ -125,8 +126,8 @@ function ConfigContent() {
             </Button>
           </Link>
 
+          {/* Mobile Actions (CanvasSettings moved to toolbar) */}
           <div className="sm:hidden flex items-center gap-1">
-            <CanvasSettings />
             <ConfigActions />
           </div>
         </div>
@@ -186,14 +187,20 @@ function ConfigContent() {
             {/* Preview Area (Always present in desktop, primary in mobile) */}
             <div className="flex-1 flex flex-col overflow-hidden">
               {/* Toolbar */}
-              <div className="h-10 md:h-12 border-b border-primary/20 bg-card/20 flex items-center justify-between px-3 md:px-4 shrink-0">
-                <div className="flex items-center gap-2 md:gap-4 overflow-hidden">
+              <div className="h-10 md:h-12 border-b border-primary/20 bg-card/20 flex items-center justify-between px-3 md:px-4 shrink-0 overflow-x-auto no-scrollbar">
+                <div className="flex items-center gap-2 md:gap-4 shrink-0">
                   <span className="text-[10px] md:text-xs font-tech text-muted-foreground truncate hidden xs:inline">
                     {config.name}
                   </span>
-                  <span className="text-[10px] md:text-xs font-tech text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20">
-                    {config.canvasSize.width}×{config.canvasSize.height}
-                  </span>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[10px] md:text-xs font-tech text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20">
+                      {config.canvasSize.width}×{config.canvasSize.height}
+                    </span>
+                    {/* Mobile-only CanvasSettings here */}
+                    <div className="sm:hidden scale-75 origin-left">
+                      <CanvasSettings />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-2 md:gap-4">
