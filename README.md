@@ -2,12 +2,14 @@
 
 **OBS benzeri katmanlı medya yönetim web uygulaması**
 
+*Bu proje artık Supabase ve GitHub Pages ile bulut uyumlu olarak çalışmaktadır.*
+
 Cyberpunk Control Room temasıyla tasarlanmış, modern ve modüler bir yapıya sahip web tabanlı sahne düzenleyici.
 
 ## Özellikler
 
 ### Katman Sistemi
-- **Sınırsız katman** ekleme desteği
+- **Sınırsız katman** ekleme deste
 - Katman **sıralama** (drag & drop veya butonlarla)
 - Her katmana **görünürlük** kontrolü
 - Katman **kopyalama** ve **silme**
