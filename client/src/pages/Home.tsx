@@ -5,51 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Settings, Layers, RefreshCw } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
-// UV Scroll Component - Doğrudan DOM manipülasyonu ile 60fps akıcı animasyon
-function UVScrollLayer({ layer }: { layer: Layer }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const posRef = useRef({ x: 0, y: 0 });
-  const animationRef = useRef<number>();
-  const lastTimeRef = useRef<number>(0);
+import { InfiniteScroll } from '@/components/ui/InfiniteScroll';
 
-  useEffect(() => {
-    const animate = (time: number) => {
-      if (!lastTimeRef.current) lastTimeRef.current = time;
-      const delta = (time - lastTimeRef.current) / 1000;
-      lastTimeRef.current = time;
-
-      posRef.current.x += layer.filters.uvScrollX * delta * 50;
-      posRef.current.y += layer.filters.uvScrollY * delta * 50;
-
-      if (containerRef.current) {
-        containerRef.current.style.backgroundPosition = `${posRef.current.x}px ${posRef.current.y}px`;
-      }
-
-      animationRef.current = requestAnimationFrame(animate);
-    };
-
-    animationRef.current = requestAnimationFrame(animate);
-
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, [layer.filters.uvScrollX, layer.filters.uvScrollY]);
-
-  return (
-    <div
-      ref={containerRef}
-      className="w-full h-full"
-      style={{
-        backgroundImage: `url("${layer.source}")`,
-        backgroundRepeat: 'repeat',
-        backgroundSize: 'contain',
-        backgroundPosition: '0px 0px',
-      }}
-    />
-  );
-}
+// UVScrollLayer removed in favor of InfiniteScroll
 
 export default function Home() {
   const [config, setConfig] = useState<ProjectConfig>(DEFAULT_PROJECT_CONFIG);
@@ -197,38 +155,46 @@ export default function Home() {
         opacity: isMain ? 1 : 0.7,
       }}
     >
-      {sortedLayers.map((layer) => (
-        <div
-          key={layer.id}
-          className="absolute inset-0 flex items-center justify-center"
-          style={{
-            zIndex: layer.zIndex,
-            ...getFilterStyle(layer),
-          }}
-        >
-          {layer.type === 'video' ? (
-            <video
-              src={layer.source}
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="max-w-full max-h-full object-contain"
-            />
-          ) : (
-            layer.filters.uvScrollX !== 0 || layer.filters.uvScrollY !== 0 ? (
-              <UVScrollLayer layer={layer} />
+      {sortedLayers.map((layer) => {
+        const isScrolling = layer.filters.uvScrollX !== 0 || layer.filters.uvScrollY !== 0;
+
+        const content = layer.type === 'video' ? (
+          <video
+            src={layer.source}
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="max-w-full max-h-full object-contain"
+          />
+        ) : (
+          <img
+            src={layer.source}
+            alt={layer.name}
+            className="max-w-full max-h-full object-contain"
+            draggable={false}
+          />
+        );
+
+        return (
+          <div
+            key={layer.id}
+            className="absolute inset-0 flex items-center justify-center"
+            style={{
+              zIndex: layer.zIndex,
+              ...getFilterStyle(layer),
+            }}
+          >
+            {isScrolling ? (
+              <InfiniteScroll speedX={layer.filters.uvScrollX} speedY={layer.filters.uvScrollY}>
+                {content}
+              </InfiniteScroll>
             ) : (
-              <img
-                src={layer.source}
-                alt={layer.name}
-                className="max-w-full max-h-full object-contain"
-                draggable={false}
-              />
-            )
-          )}
-        </div>
-      ))}
+              content
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 

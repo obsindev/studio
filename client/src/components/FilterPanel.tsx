@@ -88,6 +88,56 @@ function NumberInput({
   );
 }
 
+// Filtre Slider bileşeni - Performans için dışarıda tanımlandı
+interface FilterSliderProps {
+  icon: React.ElementType;
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  unit?: string;
+  onChange: (value: number) => void;
+}
+
+const FilterSlider = React.memo(({
+  icon: Icon,
+  label,
+  value,
+  min,
+  max,
+  step = 1,
+  unit = '',
+  onChange,
+}: FilterSliderProps) => (
+  <div className="space-y-2">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2 text-sm">
+        <Icon className="w-4 h-4 text-primary" />
+        <span>{label}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <NumberInput
+          value={value}
+          onChange={onChange}
+          className="w-16 h-7 text-right font-tech text-xs bg-secondary/50 border-primary/20"
+        />
+        <span className="text-[10px] font-tech text-muted-foreground w-4">
+          {unit}
+        </span>
+      </div>
+    </div>
+    <Slider
+      value={[value]}
+      min={min}
+      max={max}
+      step={step}
+      onValueChange={([v]) => onChange(v)}
+      className="[&_[role=slider]]:bg-primary [&_[role=slider]]:border-primary [&_.relative]:bg-secondary [&_[data-orientation=horizontal]>[data-orientation=horizontal]]:bg-primary"
+    />
+  </div>
+));
+
 export function FilterPanel() {
   const { selectedLayer, updateLayerFilters, updateLayer } = useProject();
 
@@ -119,46 +169,6 @@ export function FilterPanel() {
   const handleResetFilters = () => {
     updateLayerFilters(selectedLayer.id, DEFAULT_FILTERS);
   };
-
-  const FilterSlider = ({
-    icon: Icon,
-    label,
-    value,
-    min,
-    max,
-    step = 1,
-    unit = '',
-    filterKey,
-  }: {
-    icon: React.ElementType;
-    label: string;
-    value: number;
-    min: number;
-    max: number;
-    step?: number;
-    unit?: string;
-    filterKey: keyof typeof filters;
-  }) => (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm">
-          <Icon className="w-4 h-4 text-primary" />
-          <span>{label}</span>
-        </div>
-        <span className="text-xs font-tech text-muted-foreground">
-          {value}{unit}
-        </span>
-      </div>
-      <Slider
-        value={[value]}
-        min={min}
-        max={max}
-        step={step}
-        onValueChange={([v]) => handleFilterChange(filterKey, v)}
-        className="[&_[role=slider]]:bg-primary [&_[role=slider]]:border-primary [&_.relative]:bg-secondary [&_[data-orientation=horizontal]>[data-orientation=horizontal]]:bg-primary"
-      />
-    </div>
-  );
 
   return (
     <div className="cyber-panel h-full flex flex-col">
@@ -216,7 +226,7 @@ export function FilterPanel() {
             min={0}
             max={100}
             unit="%"
-            filterKey="opacity"
+            onChange={(v) => handleFilterChange('opacity', v)}
           />
 
           <Separator className="bg-primary/20" />
@@ -267,7 +277,7 @@ export function FilterPanel() {
               max={3}
               step={0.1}
               unit="x"
-              filterKey="scale"
+              onChange={(v) => handleFilterChange('scale', v)}
             />
 
             <FilterSlider
@@ -277,7 +287,7 @@ export function FilterPanel() {
               min={0}
               max={360}
               unit="°"
-              filterKey="rotation"
+              onChange={(v) => handleFilterChange('rotation', v)}
             />
 
             {/* Çevirme */}
@@ -317,7 +327,7 @@ export function FilterPanel() {
               min={0}
               max={360}
               unit="°"
-              filterKey="hueRotate"
+              onChange={(v) => handleFilterChange('hueRotate', v)}
             />
 
             <FilterSlider
@@ -327,7 +337,7 @@ export function FilterPanel() {
               min={0}
               max={200}
               unit="%"
-              filterKey="brightness"
+              onChange={(v) => handleFilterChange('brightness', v)}
             />
 
             <FilterSlider
@@ -337,7 +347,7 @@ export function FilterPanel() {
               min={0}
               max={200}
               unit="%"
-              filterKey="contrast"
+              onChange={(v) => handleFilterChange('contrast', v)}
             />
 
             <FilterSlider
@@ -347,7 +357,7 @@ export function FilterPanel() {
               min={0}
               max={200}
               unit="%"
-              filterKey="saturate"
+              onChange={(v) => handleFilterChange('saturate', v)}
             />
           </div>
 
@@ -366,7 +376,7 @@ export function FilterPanel() {
               min={0}
               max={20}
               unit="px"
-              filterKey="blur"
+              onChange={(v) => handleFilterChange('blur', v)}
             />
           </div>
 
@@ -379,34 +389,26 @@ export function FilterPanel() {
               <span>UV Kaydırma (Hız)</span>
             </div>
 
-            <div className="space-y-3">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2 flex-1">
-                  <Move className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm">X Hızı</span>
-                </div>
-                <NumberInput
-                  value={filters.uvScrollX}
-                  onChange={(val) => handleFilterChange('uvScrollX', val)}
-                  className="w-24 h-8 text-right"
-                  step="0.1"
-                  placeholder="0"
-                />
-              </div>
+            <div className="space-y-6">
+              <FilterSlider
+                icon={Move}
+                label="X Hızı"
+                value={filters.uvScrollX}
+                min={-10}
+                max={10}
+                step={0.1}
+                onChange={(v) => handleFilterChange('uvScrollX', v)}
+              />
 
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2 flex-1">
-                  <Move className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm">Y Hızı</span>
-                </div>
-                <NumberInput
-                  value={filters.uvScrollY}
-                  onChange={(val) => handleFilterChange('uvScrollY', val)}
-                  className="w-24 h-8 text-right"
-                  step="0.1"
-                  placeholder="0"
-                />
-              </div>
+              <FilterSlider
+                icon={Move}
+                label="Y Hızı"
+                value={filters.uvScrollY}
+                min={-10}
+                max={10}
+                step={0.1}
+                onChange={(v) => handleFilterChange('uvScrollY', v)}
+              />
             </div>
           </div>
         </div>
