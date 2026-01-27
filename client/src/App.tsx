@@ -9,9 +9,16 @@ import Home from "./pages/Home";
 import Config from "./pages/Config";
 import Docs from "./pages/Docs";
 
+const useCleanHashLocation = () => {
+  const [location, setLocation] = useHashLocation();
+  // Query parametrelerini (e.g. ?id=...) route eşleşmesinden ayırıyoruz
+  const [path] = location.split("?");
+  return [path, setLocation];
+};
+
 function Router() {
   return (
-    <WouterRouter hook={useHashLocation}>
+    <WouterRouter hook={useCleanHashLocation}>
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/config" component={Config} />
