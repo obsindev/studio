@@ -10,6 +10,7 @@ import { useProject } from '@/contexts/ProjectContext';
 import { Layer } from '@/types';
 
 import { InfiniteScroll } from '@/components/ui/InfiniteScroll';
+import { getFilterStyle } from '@/lib/renderUtils';
 
 // UVScrollLayer removed in favor of InfiniteScroll
 
@@ -31,47 +32,11 @@ export function CanvasPreview({
   const { canvasSize, backgroundColor, layers } = config;
 
   // Katmanları zIndex'e göre sırala
+  // Katmanları zIndex'e göre sırala
   const sortedLayers = useMemo(() =>
     [...layers].sort((a, b) => a.zIndex - b.zIndex),
     [layers]
   );
-
-  // CSS filter string oluştur
-  const getFilterStyle = (layer: Layer): React.CSSProperties => {
-    const { filters } = layer;
-    const activeFilters = filters.activeFilters || [];
-    const disabledFilters = filters.disabledFilters || [];
-
-    if (!filters.visible) {
-      return { display: 'none' };
-    }
-
-    // Filtre yardımcı fonksiyonu
-    const isFilterActive = (id: string) => activeFilters.includes(id) && !disabledFilters.includes(id);
-
-    const filterString = [
-      `opacity(${filters.opacity / 100})`,
-      isFilterActive('hueRotate') ? `hue-rotate(${filters.hueRotate}deg)` : '',
-      isFilterActive('colorAdjust') ? `brightness(${filters.brightness / 100})` : '',
-      isFilterActive('colorAdjust') ? `contrast(${filters.contrast / 100})` : '',
-      isFilterActive('colorAdjust') ? `saturate(${filters.saturate / 100})` : '',
-      (isFilterActive('blur') && filters.blur > 0) ? `blur(${filters.blur}px)` : '',
-    ].filter(Boolean).join(' ');
-
-    const transformString = [
-      `translate(${filters.offsetX}px, ${filters.offsetY}px)`,
-      `scale(${filters.scale})`,
-      `rotate(${filters.rotation}deg)`,
-      filters.flipX ? 'scaleX(-1)' : '',
-      filters.flipY ? 'scaleY(-1)' : '',
-    ].filter(Boolean).join(' ');
-
-    return {
-      filter: filterString,
-      transform: transformString,
-      transformOrigin: 'center center',
-    };
-  };
 
   const scaledWidth = canvasSize.width * scale;
   const scaledHeight = canvasSize.height * scale;
