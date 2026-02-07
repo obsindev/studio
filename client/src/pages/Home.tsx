@@ -134,6 +134,27 @@ export default function Home() {
     [config.layers]
   );
 
+  // Mobil için responsive scale hesapla
+  const canvasScale = useMemo(() => {
+    const { width: canvasW, height: canvasH } = config.canvasSize;
+    const { width: windowW, height: windowH } = windowSize;
+
+    if (windowW === 0 || windowH === 0) return 1;
+
+    // Mobilde veya küçük ekranlarda canvas'ı viewport içine sığdır
+    const padding = 20; // px
+    const availableWidth = windowW - padding * 2;
+    const availableHeight = windowH - padding * 2;
+
+    const scaleX = availableWidth / canvasW;
+    const scaleY = availableHeight / canvasH;
+
+    // En küçük scale'i kullan (aspect ratio korunsun)
+    const scale = Math.min(scaleX, scaleY, 1); // Max 1.0 (zoom yapmayalım)
+
+    return scale;
+  }, [config.canvasSize, windowSize]);
+
   const tilePositions = useMemo(() => {
     const { width: canvasW, height: canvasH } = config.canvasSize;
     const { width: windowW, height: windowH } = windowSize;
@@ -142,20 +163,24 @@ export default function Home() {
 
     const positions: { x: number; y: number; isMain: boolean }[] = [];
 
-    const centerX = Math.floor(windowW / 2 - canvasW / 2);
-    const centerY = Math.floor(windowH / 2 - canvasH / 2);
+    // Scaled canvas dimensions
+    const scaledW = canvasW * canvasScale;
+    const scaledH = canvasH * canvasScale;
 
-    const tilesLeft = Math.ceil(centerX / canvasW) + 1;
-    const tilesRight = Math.ceil((windowW - centerX - canvasW) / canvasW) + 1;
-    const tilesTop = Math.ceil(centerY / canvasH) + 1;
-    const tilesBottom = Math.ceil((windowH - centerY - canvasH) / canvasH) + 1;
+    const centerX = Math.floor(windowW / 2 - scaledW / 2);
+    const centerY = Math.floor(windowH / 2 - scaledH / 2);
+
+    const tilesLeft = Math.ceil(centerX / scaledW) + 1;
+    const tilesRight = Math.ceil((windowW - centerX - scaledW) / scaledW) + 1;
+    const tilesTop = Math.ceil(centerY / scaledH) + 1;
+    const tilesBottom = Math.ceil((windowH - centerY - scaledH) / scaledH) + 1;
 
     for (let row = -tilesTop; row <= tilesBottom; row++) {
       for (let col = -tilesLeft; col <= tilesRight; col++) {
-        const x = centerX + col * canvasW;
-        const y = centerY + row * canvasH;
+        const x = centerX + col * scaledW;
+        const y = centerY + row * scaledH;
 
-        if (x + canvasW > 0 && x < windowW && y + canvasH > 0 && y < windowH) {
+        if (x + scaledW > 0 && x < windowW && y + scaledH > 0 && y < windowH) {
           positions.push({
             x,
             y,
@@ -166,7 +191,7 @@ export default function Home() {
     }
 
     return positions;
-  }, [config.canvasSize, windowSize]);
+  }, [config.canvasSize, windowSize, canvasScale]);
 
   const renderCanvas = (isMain: boolean) => (
     <div
@@ -175,6 +200,8 @@ export default function Home() {
         width: config.canvasSize.width,
         height: config.canvasSize.height,
         backgroundColor: config.backgroundColor,
+        transform: `scale(${canvasScale})`,
+        transformOrigin: 'top left',
         boxShadow: isMain
           ? "0 0 0 2px rgba(0, 240, 255, 0.3), 0 0 40px rgba(0, 240, 255, 0.1)"
           : "none",
