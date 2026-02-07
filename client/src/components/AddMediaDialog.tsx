@@ -115,7 +115,14 @@ export function AddMediaDialog({ open, onOpenChange }: AddMediaDialogProps) {
     // Dosya seçilmişse önce Cloudinary'ye yükle
     if (selectedFile) {
       setIsLoading(true);
-      const uploadedUrl = await uploadToCloudinary(selectedFile);
+
+      // Env değişkenlerini component seviyesinde okuyup gönderelim
+      const cloudconfig = {
+        cloudName: import.meta.env.VITE_CLOUDINARY_CLOUD_NAME,
+        uploadPreset: import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET,
+      };
+
+      const uploadedUrl = await uploadToCloudinary(selectedFile, cloudconfig);
 
       if (uploadedUrl) {
         finalSource = uploadedUrl;

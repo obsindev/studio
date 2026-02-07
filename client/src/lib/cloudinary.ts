@@ -1,12 +1,24 @@
 import { toast } from "sonner";
 
-export async function uploadToCloudinary(file: File | Blob): Promise<string | null> {
-    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+export interface CloudinaryConfig {
+    cloudName: string;
+    uploadPreset: string;
+}
+
+export async function uploadToCloudinary(
+    file: File | Blob,
+    config?: CloudinaryConfig
+): Promise<string | null> {
+    // Config parametre olarak gelmezse env'den okumayı dene
+    const cloudName = config?.cloudName || import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = config?.uploadPreset || import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
     if (!cloudName || !uploadPreset || cloudName === "buraya_cloud_name_gelecek") {
-        toast.error("Cloudinary yapılandırması eksik (Cloud Name veya Preset).");
-        console.error("Cloudinary config missing:", { cloudName, uploadPreset });
+        // Detaylı loglama yapalım ki kullanıcı sorunu görsün
+        console.error("Cloudinary Configuration Error:");
+        console.error("- Cloud Name:", cloudName ? "Mevcut" : "EKSİK");
+        console.error("- Upload Preset:", uploadPreset ? "Mevcut" : "EKSİK");
+        toast.error("Cloudinary yapılandırması eksik. Konsolu kontrol edin.");
         return null;
     }
 
