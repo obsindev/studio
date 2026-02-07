@@ -92,6 +92,15 @@ function ConfigContent() {
       {/* Header - Responsive */}
       <header className="h-14 border-b border-primary/30 bg-card/80 backdrop-blur-sm flex items-center justify-between px-4 shrink-0 z-50 overflow-x-auto no-scrollbar">
         <div className="flex items-center gap-3 shrink-0">
+          <Link href="/projects">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-primary mr-1"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </Button>
+          </Link>
           <div className="flex items-center gap-2">
             <LayersIcon className="w-5 h-5 md:w-6 md:h-6 text-primary" />
             <h1 className="font-display text-sm md:text-lg tracking-wider text-primary truncate max-w-[120px] md:max-w-none">

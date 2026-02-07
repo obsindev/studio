@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Layers, RefreshCw } from "lucide-react";
+import { useLocation } from "wouter";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 import { DEFAULT_FILTERS, DEFAULT_PROJECT_CONFIG, Layer, ProjectConfig } from "@/types";
 import { InfiniteScroll } from "@/components/ui/InfiniteScroll";
 import { getFilterStyle } from "@/lib/renderUtils";
@@ -36,9 +38,31 @@ const normalizeProjectConfig = (
 };
 
 export default function Home() {
+  const { user, isLoading: isAuthLoading } = useAuth();
+  const [, setLocation] = useLocation();
   const [config, setConfig] = useState<ProjectConfig>(DEFAULT_PROJECT_CONFIG);
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
   const [isLoading, setIsLoading] = useState(true);
+
+  // Redirect logic based on auth and URL params
+  useEffect(() => {
+    if (isAuthLoading) return;
+
+    const search = window.location.hash.includes("?")
+      ? window.location.hash.split("?")[1]
+      : window.location.search.substring(1);
+    const params = new URLSearchParams(search);
+    const id = params.get("id");
+
+    // Only redirect if NO ID is present (landing page behavior)
+    if (!id) {
+      if (user) {
+        setLocation("/projects");
+      } else {
+        setLocation("/login");
+      }
+    }
+  }, [user, isAuthLoading, setLocation]);
 
   const loadConfig = useCallback(async () => {
     try {
