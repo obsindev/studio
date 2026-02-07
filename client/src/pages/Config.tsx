@@ -189,8 +189,14 @@ function ConfigContent() {
               <FilterPanel />
             </div>
 
-            {/* Preview Area - Full layout on all screens, hidden on mobile when not active */}
-            <div className={`flex flex-col flex-1 overflow-hidden lg:flex lg:relative ${activeTab === 'preview' ? 'block' : 'hidden lg:flex'}`}>
+            {/* Preview Area 
+                Desktop: Always visible (flex)
+                Mobile: Visible only if activeTab === 'preview'
+            */}
+            <div className={`
+              flex-col flex-1 overflow-hidden
+              ${activeTab === 'preview' ? 'flex relative z-0' : 'hidden lg:flex lg:relative lg:z-auto'}
+            `}>
               {/* Toolbar */}
               <div className="h-10 md:h-12 border-b border-primary/20 bg-card/20 flex items-center justify-between px-3 md:px-4 shrink-0 overflow-x-auto no-scrollbar">
                 <div className="flex items-center gap-2 md:gap-4 shrink-0">
