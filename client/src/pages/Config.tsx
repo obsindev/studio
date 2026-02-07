@@ -180,22 +180,23 @@ function ConfigContent() {
             {/* View Switching Logic for Mobile */}
 
             {/* Layers View (Mobile Tab) */}
-            <div className={`absolute inset-0 z-10 bg-background lg:hidden transition-transform duration-300 ${activeTab === 'layers' ? 'translate-x-0' : '-translate-x-full'}`}>
+            <div className={`absolute inset-0 z-20 bg-background overflow-hidden lg:hidden ${activeTab === 'layers' ? 'block' : 'hidden'}`}>
               <LayerList onAddLayer={() => setIsAddMediaOpen(true)} />
             </div>
 
             {/* Filters View (Mobile Tab) */}
-            <div className={`absolute inset-0 z-10 bg-background lg:hidden transition-transform duration-300 ${activeTab === 'filters' ? 'translate-x-0' : 'translate-x-full'}`}>
+            <div className={`absolute inset-0 z-20 bg-background overflow-hidden lg:hidden ${activeTab === 'filters' ? 'block' : 'hidden'}`}>
               <FilterPanel />
             </div>
 
             {/* Preview Area 
-                Desktop: Always visible (flex)
-                Mobile: Visible only if activeTab === 'preview'
+                Desktop: Always mounted and visible
+                Mobile: Only mounted when activeTab is 'preview' to prevent any ghost rendering issues
             */}
             <div className={`
-              flex-col flex-1 overflow-hidden
-              ${activeTab === 'preview' ? 'flex relative z-0' : 'hidden lg:flex lg:relative lg:z-auto'}
+              flex-col flex-1 overflow-hidden 
+              ${activeTab === 'preview' ? 'flex relative z-10' : 'hidden'}
+              lg:flex lg:relative lg:z-auto
             `}>
               {/* Toolbar */}
               <div className="h-10 md:h-12 border-b border-primary/20 bg-card/20 flex items-center justify-between px-3 md:px-4 shrink-0 overflow-x-auto no-scrollbar">
