@@ -189,8 +189,8 @@ function ConfigContent() {
               <FilterPanel />
             </div>
 
-            {/* Preview Area - Uses absolute position on mobile (like other tabs), flex on desktop */}
-            <div className={`lg:flex lg:flex-1 lg:flex-col lg:overflow-hidden absolute inset-0 lg:relative ${activeTab === 'preview' ? 'z-0' : 'z-[-1] pointer-events-none lg:pointer-events-auto lg:z-auto'}`}>
+            {/* Preview Area - Full layout on desktop, conditional visibility on mobile */}
+            <div className={`flex flex-col flex-1 overflow-hidden lg:relative absolute inset-0 ${activeTab === 'preview' ? 'z-0 lg:z-auto' : 'z-[-10] lg:z-auto'}`}>
               {/* Toolbar */}
               <div className="h-10 md:h-12 border-b border-primary/20 bg-card/20 flex items-center justify-between px-3 md:px-4 shrink-0 overflow-x-auto no-scrollbar">
                 <div className="flex items-center gap-2 md:gap-4 shrink-0">
