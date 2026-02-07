@@ -88,7 +88,7 @@ function ConfigContent() {
   };
 
   return (
-    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
+    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden supports-[height:100cqh]:h-[100cqh]">
       {/* Header - Responsive */}
       <header className="h-14 border-b border-primary/30 bg-card/80 backdrop-blur-sm flex items-center justify-between px-4 shrink-0 z-50 overflow-x-auto no-scrollbar">
         <div className="flex items-center gap-3 shrink-0">
@@ -139,7 +139,7 @@ function ConfigContent() {
       </header>
 
       {/* Main Content - Desktop & Mobile Divergence */}
-      <div className="flex flex-1 overflow-hidden relative">
+      <div className="flex flex-1 overflow-hidden relative min-h-0">
 
         {/* Sol Panel - Desktop-only sidebar */}
         <aside className="hidden lg:block w-72 border-r border-primary/30 bg-card/40 overflow-hidden">
@@ -147,7 +147,7 @@ function ConfigContent() {
         </aside>
 
         {/* Orta Alan - Main Workspace */}
-        <main className="flex-1 flex flex-col overflow-hidden">
+        <main className="flex-1 flex flex-col overflow-hidden min-h-0">
 
           {/* Mobile Tabs - Only visible on small screens */}
           <div className="lg:hidden bg-card/60 border-b border-primary/20 flex items-center justify-center p-1 shrink-0">
@@ -194,7 +194,7 @@ function ConfigContent() {
                 Mobile: Only mounted when activeTab is 'preview' to prevent any ghost rendering issues
             */}
             <div className={`
-              flex-col flex-1 overflow-hidden 
+              flex-col flex-1 overflow-hidden min-h-0
               ${activeTab === 'preview' ? 'flex relative z-10' : 'hidden'}
               lg:flex lg:relative lg:z-auto
             `}>
@@ -264,7 +264,7 @@ function ConfigContent() {
               </div>
 
               {/* Status Bar */}
-              <div className="h-7 border-t border-primary/20 bg-card relative z-20 flex items-center justify-between px-3 text-[9px] md:text-xs font-tech text-muted-foreground shrink-0">
+              <div className="h-7 border-t border-primary/20 bg-card relative z-20 flex items-center justify-between px-3 text-[9px] md:text-xs font-tech text-muted-foreground shrink-0 pb-[env(safe-area-inset-bottom)] box-content">
                 <div className="flex items-center gap-3 overflow-hidden">
                   <span className="truncate">KATMAN: {config.layers.length}</span>
                   <span className="hidden sm:inline opacity-30">|</span>
