@@ -7,6 +7,8 @@ import { DEFAULT_FILTERS, DEFAULT_PROJECT_CONFIG, Layer, ProjectConfig } from "@
 import { InfiniteScroll } from "@/components/ui/InfiniteScroll";
 import { getFilterStyle } from "@/lib/renderUtils";
 
+import { expandConfig } from "@/lib/compression";
+
 const isAccessColumnError = (error: unknown): boolean => {
   if (!error || typeof error !== "object") return false;
   const message = String((error as { message?: string }).message ?? "");
@@ -81,7 +83,8 @@ export default function Home() {
           .single();
 
         if (!mainError && mainData) {
-          setConfig(normalizeProjectConfig(mainData.config, mainData.is_public ?? undefined));
+          const expandedConfig = expandConfig(mainData.config);
+          setConfig(normalizeProjectConfig(expandedConfig, mainData.is_public ?? undefined));
           setIsLoading(false);
           return;
         }
@@ -97,14 +100,15 @@ export default function Home() {
         if (legacyData) {
           // If we got data here, it means we can read the config. 
           // We assume it's public enough to read if RLS didn't block it.
-          setConfig(normalizeProjectConfig(legacyData.config, true));
+          const expandedConfig = expandConfig(legacyData.config);
+          setConfig(normalizeProjectConfig(expandedConfig, true));
           setIsLoading(false);
           return;
         }
 
         // 3. If both failed, show error
         console.error("Config load failed:", mainError, legacyError);
-        setError("Proje bulunamadı veya erişim izni yok.");
+        setError("Proje bulunamadı veya erişim izniniz yok.");
         setIsLoading(false);
         return;
       }
