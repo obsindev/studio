@@ -176,7 +176,7 @@ function ConfigContent() {
             </div>
           </div>
 
-          <div className="flex-1 relative flex overflow-hidden">
+          <div className="flex-1 relative flex overflow-hidden isolate">
             {/* View Switching Logic for Mobile */}
 
             {/* Layers View (Mobile Tab) */}
@@ -254,7 +254,7 @@ function ConfigContent() {
               {/* Visualization Area */}
               <div
                 ref={vizContainerRef}
-                className="flex-1 overflow-hidden bg-[#050508] relative group"
+                className="flex-1 overflow-hidden bg-[#050508] relative z-0 group"
               >
                 <CanvasPreview
                   scale={previewScale}
@@ -264,7 +264,7 @@ function ConfigContent() {
               </div>
 
               {/* Status Bar */}
-              <div className="h-7 border-t border-primary/20 bg-card/40 flex items-center justify-between px-3 text-[9px] md:text-xs font-tech text-muted-foreground shrink-0">
+              <div className="h-7 border-t border-primary/20 bg-card relative z-20 flex items-center justify-between px-3 text-[9px] md:text-xs font-tech text-muted-foreground shrink-0">
                 <div className="flex items-center gap-3 overflow-hidden">
                   <span className="truncate">KATMAN: {config.layers.length}</span>
                   <span className="hidden sm:inline opacity-30">|</span>
