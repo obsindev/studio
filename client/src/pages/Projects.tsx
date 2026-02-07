@@ -4,6 +4,17 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { DEFAULT_PROJECT_CONFIG, ProjectConfig } from "@/types";
@@ -15,7 +26,9 @@ import {
   RefreshCw,
   Settings,
   Users,
+  Trash2,
 } from "lucide-react";
+import { ProjectThumbnail } from "@/components/ProjectThumbnail";
 
 type SceneConfig = ProjectConfig & { ownerId?: string };
 
@@ -151,6 +164,24 @@ export default function Projects() {
     void loadProjects();
   }, [loadProjects, user]);
 
+  const handleDeleteProject = async (id: string) => {
+    try {
+      const { error } = await supabase.from("scenes").delete().eq("id", id);
+      if (error) throw error;
+
+      setProjects(prev => prev.filter(p => p.id !== id));
+      toast.success("Proje silindi");
+
+      if (localProjectId === id) {
+        localStorage.removeItem(LOCAL_ID_KEY);
+        setLocalProjectId(null);
+      }
+    } catch (error) {
+      console.error("Delete failed:", error);
+      toast.error("Proje silinemedi");
+    }
+  };
+
   const myProjects = useMemo(() => {
     if (!user) return [];
     return projects.filter((project) => {
@@ -256,14 +287,51 @@ export default function Projects() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                 {myProjects.map((project) => (
-                  <Card key={project.id} className="cyber-panel bg-card/50 border-primary/20">
-                    <CardHeader>
-                      <CardTitle className="text-base font-display truncate">{project.config.name}</CardTitle>
-                      <CardDescription>ID: {project.id}</CardDescription>
+                  <Card key={project.id} className="cyber-panel bg-card/50 border-primary/20 overflow-hidden flex flex-col">
+                    {/* Thumbnail Area */}
+                    <div className="aspect-video w-full border-b border-primary/10 relative group">
+                      <ProjectThumbnail config={project.config} />
+                      <Link href={`/config?id=${project.id}`}>
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                          <Button variant="secondary" size="sm">Düzenle</Button>
+                        </div>
+                      </Link>
+                    </div>
+
+                    <CardHeader className="pb-2">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <CardTitle className="text-base font-display truncate pr-2" title={project.config.name}>
+                            {project.config.name}
+                          </CardTitle>
+                          <CardDescription className="text-xs">ID: {project.id}</CardDescription>
+                        </div>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive -mt-1 -mr-2">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Projeyi Sil?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Bu işlem geri alınamaz. "{project.config.name}" projesi kalıcı olarak silinecek.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>İptal</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDeleteProject(project.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                Sil
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </CardHeader>
-                    <CardContent className="space-y-3 text-xs text-muted-foreground">
+                    <CardContent className="space-y-3 text-xs text-muted-foreground flex-1 flex flex-col justify-end pt-0">
                       <div className="flex items-center justify-between">
                         <span>Katman</span>
                         <span className="text-primary">{project.config.layers.length}</span>
@@ -272,7 +340,7 @@ export default function Projects() {
                         <span>Guncelleme</span>
                         <span>{formatDate(project.updated_at)}</span>
                       </div>
-                      <Link href={`/config?id=${project.id}`}>
+                      <Link href={`/config?id=${project.id}`} className="mt-2 block">
                         <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
                           <Settings className="w-4 h-4 mr-2" />
                           Config'te Ac
@@ -294,14 +362,22 @@ export default function Projects() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                 {exploreProjects.map((project) => (
-                  <Card key={project.id} className="cyber-panel bg-card/50 border-primary/20">
-                    <CardHeader>
+                  <Card key={project.id} className="cyber-panel bg-card/50 border-primary/20 overflow-hidden flex flex-col">
+                    <div className="aspect-video w-full border-b border-primary/10 relative group">
+                      <ProjectThumbnail config={project.config} />
+                      <Link href={`/?id=${project.id}`}>
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                          <Button variant="secondary" size="sm">Yayında Gör</Button>
+                        </div>
+                      </Link>
+                    </div>
+                    <CardHeader className="pb-2">
                       <CardTitle className="text-base font-display truncate">{project.config.name}</CardTitle>
                       <CardDescription>ID: {project.id}</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-3 text-xs text-muted-foreground">
+                    <CardContent className="space-y-3 text-xs text-muted-foreground flex-1 flex flex-col justify-end pt-0">
                       <div className="flex items-center justify-between">
                         <span>Katman</span>
                         <span className="text-primary">{project.config.layers.length}</span>
@@ -310,17 +386,17 @@ export default function Projects() {
                         <span>Guncelleme</span>
                         <span>{formatDate(project.updated_at)}</span>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 mt-2">
                         <Link href={`/config?id=${project.id}`} className="flex-1">
                           <Button variant="outline" className="w-full border-primary/30 hover:border-primary hover:bg-primary/10">
                             <Settings className="w-4 h-4 mr-2" />
-                            Config'te Ac
+                            Config
                           </Button>
                         </Link>
                         <Link href={`/?id=${project.id}`} className="flex-1">
                           <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
                             <Compass className="w-4 h-4 mr-2" />
-                            Yayinda Gor
+                            Canlı
                           </Button>
                         </Link>
                       </div>
