@@ -117,9 +117,10 @@ export function AddMediaDialog({ open, onOpenChange }: AddMediaDialogProps) {
       setIsLoading(true);
 
       // Env değişkenlerini component seviyesinde okuyup gönderelim
+      // Eğer env yüklenemezse (restart gerekebilir), hardcoded fallback kullanalım
       const cloudconfig = {
-        cloudName: import.meta.env.VITE_CLOUDINARY_CLOUD_NAME,
-        uploadPreset: import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET,
+        cloudName: import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "dfkldtgxj",
+        uploadPreset: import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "obs-web-studio",
       };
 
       const uploadedUrl = await uploadToCloudinary(selectedFile, cloudconfig);
