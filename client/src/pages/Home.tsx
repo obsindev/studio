@@ -73,66 +73,62 @@ export default function Home() {
       const id = getProjectIdFromUrl();
 
       if (id) {
-        // Try fetching the project
-        // explicitly select is_public to be sure
-        let query = supabase
+        // 1. Try fetching with is_public (newer schema)
+        const { data: mainData, error: mainError } = await supabase
           .from("scenes")
           .select("config, is_public")
           .eq("id", id)
           .single();
 
-        let { data, error } = await query;
-
-        if (error) {
-          // Fallback for some RLS cases or legacy data
-          if (isAccessColumnError(error)) {
-            const legacyResult = await supabase
-              .from("scenes")
-              .select("config")
-              .eq("id", id)
-              .single();
-
-            if (legacyResult.data) {
-              data = { config: legacyResult.data.config, is_public: true }; // Assume true if we could read it
-              error = null;
-            } else {
-              error = legacyResult.error;
-            }
-          }
-        }
-
-        if (error) {
-          console.error("Supabase Error:", error);
-          setError("Proje yüklenemedi veya erişim izniniz yok.");
+        if (!mainError && mainData) {
+          setConfig(normalizeProjectConfig(mainData.config, mainData.is_public ?? undefined));
           setIsLoading(false);
           return;
         }
 
-        if (data) {
-          setConfig(normalizeProjectConfig(data.config, data.is_public ?? undefined));
+        // 2. Fallback: If error (any error, e.g. column missing, RLS), try selecting just config
+        // This handles cases where 'is_public' column might not exist or be accessible
+        const { data: legacyData, error: legacyError } = await supabase
+          .from("scenes")
+          .select("config")
+          .eq("id", id)
+          .single();
+
+        if (legacyData) {
+          // If we got data here, it means we can read the config. 
+          // We assume it's public enough to read if RLS didn't block it.
+          setConfig(normalizeProjectConfig(legacyData.config, true));
           setIsLoading(false);
           return;
         }
-      } else {
-        // ID yoksa veya local dev ise
-        if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-          // Local dev fallback
-          const response = await fetch("/api/config");
-          if (response.ok) {
-            const serverConfig = await response.json();
-            if (serverConfig) {
-              setConfig(normalizeProjectConfig(serverConfig));
-            }
-          } else {
-            // No ID and no local API -> probably will redirect anyway, 
-            // but if we are here, just stop loading
+
+        // 3. If both failed, show error
+        console.error("Config load failed:", mainError, legacyError);
+        setError("Proje bulunamadı veya erişim izni yok.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Local dev / No ID handling
+      if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+        const response = await fetch("/api/config");
+        if (response.ok) {
+          const serverConfig = await response.json();
+          if (serverConfig) {
+            setConfig(normalizeProjectConfig(serverConfig));
+            setIsLoading(false);
+            return;
           }
         }
       }
+
+      // If no ID and not local dev, we are just on the landing page (which handled redirect in useEffect)
+      // So we can stop loading.
+      setIsLoading(false);
+
     } catch (error) {
-      console.error("Config load failed:", error);
+      console.error("Critical load error:", error);
       setError("Beklenmeyen bir hata oluştu.");
-    } finally {
       setIsLoading(false);
     }
   }, [getProjectIdFromUrl]);
