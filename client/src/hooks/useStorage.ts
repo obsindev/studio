@@ -136,10 +136,8 @@ export function useStorage(
     if (error) {
       console.error("Cloud save failed:", error);
       toast.error("Kaydetme basarisiz. Yetkiniz olmayabilir.");
-    } else {
-      // State'i de güncelle ki UI'da tarih değişsin
-      setConfig(configToSave);
     }
+    // NOT: setConfig burada ÇAĞRILMAMALI - kullanıcının değişikliklerini geri alır
   }, [config, projectId]);
 
   const loadConfig = useCallback(

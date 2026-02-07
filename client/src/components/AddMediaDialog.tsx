@@ -123,12 +123,9 @@ export function AddMediaDialog({ open, onOpenChange }: AddMediaDialogProps) {
       // Sadece resimse ve GIF değilse WebP'ye çevir
       if (selectedFile.type.startsWith('image/') && selectedFile.type !== 'image/gif') {
         try {
-          console.log("WebP dönüşümü yapılıyor...");
           const webpBlob = await convertToWebP(selectedFile, 0.80);
           fileToUpload = webpBlob;
-          console.log(`WebP dönüşümü tamamlandı. Orijinal: ${selectedFile.size} bytes, WebP: ${webpBlob.size} bytes`);
         } catch (e) {
-          console.error("WebP conversion failed, uploading original:", e);
           // Hata olursa orijinal dosyayı kullanmaya devam eder
         }
       }

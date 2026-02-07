@@ -14,11 +14,7 @@ export async function uploadToCloudinary(
     const uploadPreset = config?.uploadPreset || import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
     if (!cloudName || !uploadPreset || cloudName === "buraya_cloud_name_gelecek") {
-        // Detaylı loglama yapalım ki kullanıcı sorunu görsün
-        console.error("Cloudinary Configuration Error:");
-        console.error("- Cloud Name:", cloudName ? "Mevcut" : "EKSİK");
-        console.error("- Upload Preset:", uploadPreset ? "Mevcut" : "EKSİK");
-        toast.error("Cloudinary yapılandırması eksik. Konsolu kontrol edin.");
+        toast.error("Bulut yükleme yapılandırması eksik. Lütfen yöneticinizle iletişime geçin.");
         return null;
     }
 
@@ -51,8 +47,7 @@ export async function uploadToCloudinary(
         const data = await response.json();
         return data.secure_url as string;
     } catch (error: any) {
-        console.error("Cloudinary upload failure:", error);
-        toast.error(`Yükleme hatası: ${error.message}`);
+        toast.error("Dosya yüklenirken bir hata oluştu. Lütfen tekrar deneyin.");
         return null;
     }
 }

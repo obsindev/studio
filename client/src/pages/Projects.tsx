@@ -18,6 +18,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { DEFAULT_PROJECT_CONFIG, ProjectConfig } from "@/types";
+import { expandConfig } from "@/lib/compression";
 import {
   Compass,
   FolderKanban,
@@ -54,7 +55,10 @@ const normalizeConfig = (raw: unknown): SceneConfig => {
     return { ...DEFAULT_PROJECT_CONFIG };
   }
 
-  const parsed = raw as Partial<SceneConfig>;
+  // Minified datayı expand et
+  const expanded = expandConfig(raw);
+
+  const parsed = expanded as Partial<SceneConfig>;
   return {
     ...DEFAULT_PROJECT_CONFIG,
     ...parsed,
