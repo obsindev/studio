@@ -128,6 +128,11 @@ export function useStorage(
       return;
     }
 
+    // Prevent saving empty projects
+    if (config.layers.length === 0) {
+      return;
+    }
+
     // New Project or Fork: Create new record
     if (!projectId) {
       const newId = nanoid(10);

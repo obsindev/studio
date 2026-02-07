@@ -67,6 +67,14 @@ export default function Projects() {
 
   useEffect(() => {
     setLocalProjectId(localStorage.getItem(LOCAL_ID_KEY));
+
+    // Clean up URL parameters
+    const currentUrl = new URL(window.location.href);
+    if (currentUrl.searchParams.has("id") || currentUrl.searchParams.has("new")) {
+      currentUrl.searchParams.delete("id");
+      currentUrl.searchParams.delete("new");
+      window.history.replaceState({}, "", currentUrl.toString());
+    }
   }, []);
 
   useEffect(() => {
@@ -302,12 +310,20 @@ export default function Projects() {
                         <span>Guncelleme</span>
                         <span>{formatDate(project.updated_at)}</span>
                       </div>
-                      <Link href={`/?id=${project.id}`}>
-                        <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-                          <Compass className="w-4 h-4 mr-2" />
-                          Yayinda Gor
-                        </Button>
-                      </Link>
+                      <div className="flex gap-2">
+                        <Link href={`/config?id=${project.id}`} className="flex-1">
+                          <Button variant="outline" className="w-full border-primary/30 hover:border-primary hover:bg-primary/10">
+                            <Settings className="w-4 h-4 mr-2" />
+                            Config'te Ac
+                          </Button>
+                        </Link>
+                        <Link href={`/?id=${project.id}`} className="flex-1">
+                          <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+                            <Compass className="w-4 h-4 mr-2" />
+                            Yayinda Gor
+                          </Button>
+                        </Link>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
